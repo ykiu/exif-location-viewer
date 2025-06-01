@@ -26,6 +26,7 @@ const consolidateMarkers = (
         existingCluster.representativeThumbnail || photo.thumbnail;
     } else {
       consolidated.push({
+        id: consolidated.length,
         latitude: photo.latitude,
         longitude: photo.longitude,
         representativeThumbnail: photo.thumbnail,
@@ -58,9 +59,7 @@ const isNotNullish = <T,>(value: T | null | undefined): value is T => {
 
 const App = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(
-    null
-  );
+  const [selectedGroup, setSelectedGroup] = useState<PhotoGroup | null>(null);
   const [zoom, setZoom] = useState(0);
   const [isOverlayVisible, setIsOverlayVisible] = useState(true);
 
@@ -92,7 +91,7 @@ const App = () => {
       })
     );
     setPhotos(photos.filter(isNotNullish));
-    setSelectedGroupIndex(null);
+    setSelectedGroup(null);
     setIsOverlayVisible(false);
   };
   const photoGroups = useMemo(
@@ -103,9 +102,6 @@ const App = () => {
     event.preventDefault();
   };
 
-  const handleMarkerClick = (index: number) => {
-    setSelectedGroupIndex(index);
-  };
   return (
     <>
       {isOverlayVisible && (
@@ -129,7 +125,7 @@ const App = () => {
                 key={index}
                 latitude={group.latitude}
                 longitude={group.longitude}
-                onClick={() => handleMarkerClick(index)}
+                onClick={() => setSelectedGroup(group)}
               >
                 <div
                   className="marker bg-cover w-16 h-16 rounded-full border-2 border-white shadow-lg"
@@ -141,11 +137,11 @@ const App = () => {
             ))}
           </Map>
         </div>
-        {selectedGroupIndex != null && photoGroups[selectedGroupIndex] && (
+        {selectedGroup != null && (
           <PhotoGroupPane
-            key={selectedGroupIndex}
-            group={photoGroups[selectedGroupIndex]}
-            onClose={() => setSelectedGroupIndex(null)}
+            key={selectedGroup.id}
+            group={selectedGroup}
+            onClose={() => setSelectedGroup(null)}
           />
         )}
       </div>

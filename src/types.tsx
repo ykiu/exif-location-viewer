@@ -6,6 +6,7 @@ export type Photo = {
 };
 
 export type PhotoGroup = {
+  id: number;
   latitude: number;
   longitude: number;
   representativeThumbnail: string;
