@@ -2,20 +2,8 @@ import { useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Map, { Marker } from "react-map-gl/maplibre";
 import ExifReader from "exifreader";
-import { X } from "lucide-react";
-
-type Photo = {
-  latitude: number;
-  longitude: number;
-  thumbnail: string;
-};
-
-type PhotoGroup = {
-  latitude: number;
-  longitude: number;
-  representativeThumbnail: string;
-  photos: Photo[];
-};
+import PhotoGroupPane from "./PhotoGroupPane";
+import type { Photo, PhotoGroup } from "./types";
 
 const consolidateMarkers = (
   photos: Photo[],
@@ -75,33 +63,31 @@ const App = () => {
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
+    const photos = await Promise.all(
+      Array.from(files).map(async (file) => {
+        const { gps, Thumbnail } = ExifReader.load(await loadFile(file), {
+          expanded: true,
+        });
+        const latitude = gps?.Latitude;
+        const longitude = gps?.Longitude;
 
-    const newPhotos = (
-      await Promise.all(
-        Array.from(files).map(async (file) => {
-          const { gps, Thumbnail } = ExifReader.load(await loadFile(file), {
-            expanded: true,
-          });
-          const latitude = gps?.Latitude;
-          const longitude = gps?.Longitude;
-
-          if (latitude && longitude) {
-            console.log(
-              `File: ${file.name}, Latitude: ${latitude}, Longitude: ${longitude}`
-            );
-            const url = Thumbnail
-              ? "data:image/jpeg;base64," + Thumbnail.base64
-              : "";
-            return {
-              latitude,
-              longitude,
-              thumbnail: url,
-            };
-          }
-        })
-      )
-    ).filter(isNotNullish);
-    setPhotoGroups(consolidateMarkers(newPhotos, 0.01));
+        if (latitude && longitude) {
+          console.log(
+            `File: ${file.name}, Latitude: ${latitude}, Longitude: ${longitude}`
+          );
+          const url = Thumbnail
+            ? "data:image/jpeg;base64," + Thumbnail.base64
+            : "";
+          return {
+            latitude,
+            longitude,
+            thumbnail: url,
+            file,
+          };
+        }
+      })
+    );
+    setPhotoGroups(consolidateMarkers(photos.filter(isNotNullish), 0.01));
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -138,27 +124,10 @@ const App = () => {
           </Map>
         </div>
         {selectedGroup && (
-          <div className="w-1/2 bg-gray-100 relative flex flex-col">
-            <div className="flex items-center p-2">
-              <button
-                className="p-2 rounded-full hover:bg-gray-200"
-                onClick={() => setSelectedGroup(null)}
-              >
-                <X size={24} />
-              </button>
-              <h2 className="text-lg font-bold">Photos</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-4 p-4 overflow-y-auto min-h-0">
-              {selectedGroup.photos.map((photo, index) => (
-                <img
-                  key={index}
-                  src={photo.thumbnail}
-                  alt="Photo"
-                  className="w-full h-auto rounded-lg shadow-md"
-                />
-              ))}
-            </div>
-          </div>
+          <PhotoGroupPane
+            group={selectedGroup}
+            onClose={() => setSelectedGroup(null)}
+          />
         )}
       </div>
     </>
