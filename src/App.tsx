@@ -58,7 +58,9 @@ const isNotNullish = <T,>(value: T | null | undefined): value is T => {
 
 const App = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<PhotoGroup | null>(null);
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(
+    null
+  );
   const [zoom, setZoom] = useState(0);
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -88,6 +90,7 @@ const App = () => {
       })
     );
     setPhotos(photos.filter(isNotNullish));
+    setSelectedGroupIndex(null);
   };
   const photoGroups = useMemo(
     () => consolidateMarkers(photos, 9 / 2 ** zoom), // Adjust how much to consolidate based on zoom level
@@ -97,8 +100,8 @@ const App = () => {
     event.preventDefault();
   };
 
-  const handleMarkerClick = (group: PhotoGroup) => {
-    setSelectedGroup(group);
+  const handleMarkerClick = (index: number) => {
+    setSelectedGroupIndex(index);
   };
   return (
     <>
@@ -114,7 +117,7 @@ const App = () => {
                 key={index}
                 latitude={group.latitude}
                 longitude={group.longitude}
-                onClick={() => handleMarkerClick(group)}
+                onClick={() => handleMarkerClick(index)}
               >
                 <div
                   className="marker bg-cover w-16 h-16 rounded-full border-2 border-white shadow-lg"
@@ -126,10 +129,11 @@ const App = () => {
             ))}
           </Map>
         </div>
-        {selectedGroup && (
+        {selectedGroupIndex != null && (
           <PhotoGroupPane
-            group={selectedGroup}
-            onClose={() => setSelectedGroup(null)}
+            key={selectedGroupIndex}
+            group={photoGroups[selectedGroupIndex]}
+            onClose={() => setSelectedGroupIndex(null)}
           />
         )}
       </div>
