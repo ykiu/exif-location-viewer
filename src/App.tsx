@@ -17,7 +17,10 @@ type PhotoGroup = {
   photos: Photo[];
 };
 
-function consolidateMarkers(photos: Photo[], threshold: number): PhotoGroup[] {
+const consolidateMarkers = (
+  photos: Photo[],
+  threshold: number
+): PhotoGroup[] => {
   const consolidated: PhotoGroup[] = [];
 
   photos.forEach((photo) => {
@@ -44,65 +47,61 @@ function consolidateMarkers(photos: Photo[], threshold: number): PhotoGroup[] {
   });
 
   return consolidated;
-}
+};
 
-function App() {
+const loadFile = (file: File): Promise<ArrayBuffer> => {
+  const reader = new FileReader();
+  return new Promise((resolve, reject) => {
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        resolve(e.target.result as ArrayBuffer);
+      } else {
+        reject(new Error("Failed to read file"));
+      }
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsArrayBuffer(file);
+  });
+};
+
+const isNotNullish = <T,>(value: T | null | undefined): value is T => {
+  return value != null;
+};
+
+const App = () => {
   const [photoGroups, setPhotoGroups] = useState<PhotoGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<PhotoGroup | null>(null);
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
-    const newPhotos: Photo[] = [];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const reader = new FileReader();
+    const newPhotos = (
+      await Promise.all(
+        Array.from(files).map(async (file) => {
+          const { gps, Thumbnail } = ExifReader.load(await loadFile(file), {
+            expanded: true,
+          });
+          const latitude = gps?.Latitude;
+          const longitude = gps?.Longitude;
 
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          try {
-            const { gps, Thumbnail } = ExifReader.load(e.target.result, {
-              expanded: true,
-            });
-            const latitude = gps?.Latitude;
-            const longitude = gps?.Longitude;
-
-            if (latitude && longitude) {
-              console.log(
-                `File: ${file.name}, Latitude: ${latitude}, Longitude: ${longitude}`
-              );
-              const url = Thumbnail
-                ? "data:image/jpeg;base64," + Thumbnail.base64
-                : "";
-              newPhotos.push({
-                latitude,
-                longitude,
-                thumbnail: url,
-              });
-              setPhotoGroups((prevGroups) =>
-                consolidateMarkers(
-                  [
-                    ...prevGroups.flatMap((group) => group.photos),
-                    ...newPhotos,
-                  ],
-                  0.01
-                )
-              );
-            } else {
-              console.log(`File: ${file.name}, No GPS data found.`);
-            }
-          } catch (error) {
-            console.error(
-              `Error reading EXIF data from file: ${file.name}`,
-              error
+          if (latitude && longitude) {
+            console.log(
+              `File: ${file.name}, Latitude: ${latitude}, Longitude: ${longitude}`
             );
+            const url = Thumbnail
+              ? "data:image/jpeg;base64," + Thumbnail.base64
+              : "";
+            return {
+              latitude,
+              longitude,
+              thumbnail: url,
+            };
           }
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    }
+        })
+      )
+    ).filter(isNotNullish);
+    setPhotoGroups(consolidateMarkers(newPhotos, 0.01));
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -164,6 +163,6 @@ function App() {
       </div>
     </>
   );
-}
+};
 
 export default App;
