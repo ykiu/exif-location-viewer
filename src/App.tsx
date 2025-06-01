@@ -62,6 +62,8 @@ const App = () => {
     null
   );
   const [zoom, setZoom] = useState(0);
+  const [isOverlayVisible, setIsOverlayVisible] = useState(true);
+
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
@@ -91,6 +93,7 @@ const App = () => {
     );
     setPhotos(photos.filter(isNotNullish));
     setSelectedGroupIndex(null);
+    setIsOverlayVisible(false);
   };
   const photoGroups = useMemo(
     () => consolidateMarkers(photos, 9 / 2 ** zoom), // Adjust how much to consolidate based on zoom level
@@ -105,6 +108,11 @@ const App = () => {
   };
   return (
     <>
+      {isOverlayVisible && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/75 text-white text-lg z-10 pointer-events-none">
+          Drag & drop geo-tagged images onto the map and view their locations.
+        </div>
+      )}
       <div className="flex flex-row h-dvh">
         <div className="flex-1" onDrop={handleDrop} onDragOver={handleDragOver}>
           <Map
