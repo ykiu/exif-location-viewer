@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Map, { Marker } from "react-map-gl/maplibre";
 import ExifReader from "exifreader";
@@ -57,9 +57,9 @@ const isNotNullish = <T,>(value: T | null | undefined): value is T => {
 };
 
 const App = () => {
-  const [photoGroups, setPhotoGroups] = useState<PhotoGroup[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<PhotoGroup | null>(null);
-
+  const [zoom, setZoom] = useState(0);
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
@@ -87,9 +87,12 @@ const App = () => {
         }
       })
     );
-    setPhotoGroups(consolidateMarkers(photos.filter(isNotNullish), 0.01));
+    setPhotos(photos.filter(isNotNullish));
   };
-
+  const photoGroups = useMemo(
+    () => consolidateMarkers(photos, 9 / 2 ** zoom), // Adjust how much to consolidate based on zoom level
+    [photos, zoom]
+  );
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
   };
@@ -97,13 +100,13 @@ const App = () => {
   const handleMarkerClick = (group: PhotoGroup) => {
     setSelectedGroup(group);
   };
-
   return (
     <>
       <div className="flex flex-row h-dvh">
         <div className="flex-1" onDrop={handleDrop} onDragOver={handleDragOver}>
           <Map
             style={{ width: "100%", height: "100%" }}
+            onZoomEnd={(event) => setZoom(event.target.getZoom())}
             mapStyle="https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json"
           >
             {photoGroups.map((group, index) => (
