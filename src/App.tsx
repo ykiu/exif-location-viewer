@@ -113,8 +113,12 @@ const App = () => {
           Drag & drop geo-tagged images.
         </div>
       )}
-      <div className="flex flex-row h-dvh">
-        <div className="flex-1" onDrop={handleDrop} onDragOver={handleDragOver}>
+      <div
+        className="flex flex-row h-dvh"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+      >
+        <div className="flex-1">
           <Map
             style={{ width: "100%", height: "100%" }}
             onZoomEnd={(event) => setZoom(event.target.getZoom())}
@@ -137,7 +141,7 @@ const App = () => {
             ))}
           </Map>
         </div>
-        {selectedGroupIndex != null && (
+        {selectedGroupIndex != null && photoGroups[selectedGroupIndex] && (
           <PhotoGroupPane
             key={selectedGroupIndex}
             group={photoGroups[selectedGroupIndex]}
