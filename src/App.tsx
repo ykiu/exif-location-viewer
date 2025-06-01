@@ -3,18 +3,19 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import Map, { Marker } from "react-map-gl/maplibre";
 import ExifReader from "exifreader";
 
-type Location = {
+type Photo = {
   latitude: number;
   longitude: number;
+  thumbnail: string;
 };
 
 function App() {
-  const [locations, setLocations] = useState<Location[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
-    const newLocations: Location[] = [];
+    const newPhotos: Photo[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -23,7 +24,7 @@ function App() {
       reader.onload = (e) => {
         if (e.target?.result) {
           try {
-            const { gps } = ExifReader.load(e.target.result, {
+            const { gps, Thumbnail } = ExifReader.load(e.target.result, {
               expanded: true,
             });
             const latitude = gps?.Latitude;
@@ -33,14 +34,15 @@ function App() {
               console.log(
                 `File: ${file.name}, Latitude: ${latitude}, Longitude: ${longitude}`
               );
-              newLocations.push({
+              const url = Thumbnail
+                ? "data:image/jpeg;base64," + Thumbnail.base64
+                : "";
+              newPhotos.push({
                 latitude,
                 longitude,
+                thumbnail: url,
               });
-              setLocations((prevLocations) => [
-                ...prevLocations,
-                ...newLocations,
-              ]);
+              setPhotos((prevLocations) => [...prevLocations, ...newPhotos]);
             } else {
               console.log(`File: ${file.name}, No GPS data found.`);
             }
@@ -69,12 +71,19 @@ function App() {
             style={{ width: "100%", height: "100%" }}
             mapStyle="https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json"
           >
-            {locations.map((location, index) => (
+            {photos.map((photo, index) => (
               <Marker
                 key={index}
-                latitude={location.latitude}
-                longitude={location.longitude}
-              />
+                latitude={photo.latitude}
+                longitude={photo.longitude}
+              >
+                <div
+                  className="marker bg-cover w-16 h-16 rounded-full border-2 border-white shadow-lg"
+                  style={{
+                    backgroundImage: `url(${photo.thumbnail})`,
+                  }}
+                ></div>
+              </Marker>
             ))}
           </Map>
         </div>
