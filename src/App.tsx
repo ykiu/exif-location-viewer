@@ -95,7 +95,7 @@ const App = () => {
     setIsOverlayVisible(false);
   };
   const photoGroups = useMemo(
-    () => consolidateMarkers(photos, 9 / 2 ** zoom), // Adjust how much to consolidate based on zoom level
+    () => consolidateMarkers(photos, 6 / 2 ** zoom), // Adjust how much to consolidate based on zoom level
     [photos, zoom]
   );
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
