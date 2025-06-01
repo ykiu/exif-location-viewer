@@ -9,6 +9,28 @@ type Photo = {
   thumbnail: string;
 };
 
+function consolidateMarkers(photos: Photo[], threshold: number): Photo[] {
+  const consolidated: Photo[] = [];
+
+  photos.forEach((photo) => {
+    const existingCluster = consolidated.find((cluster) => {
+      const distance = Math.sqrt(
+        Math.pow(cluster.latitude - photo.latitude, 2) +
+          Math.pow(cluster.longitude - photo.longitude, 2)
+      );
+      return distance < threshold;
+    });
+
+    if (existingCluster) {
+      existingCluster.thumbnail = existingCluster.thumbnail || photo.thumbnail;
+    } else {
+      consolidated.push(photo);
+    }
+  });
+
+  return consolidated;
+}
+
 function App() {
   const [photos, setPhotos] = useState<Photo[]>([]);
 
@@ -42,7 +64,9 @@ function App() {
                 longitude,
                 thumbnail: url,
               });
-              setPhotos((prevLocations) => [...prevLocations, ...newPhotos]);
+              setPhotos((prevLocations) =>
+                consolidateMarkers([...prevLocations, ...newPhotos], 0.01)
+              );
             } else {
               console.log(`File: ${file.name}, No GPS data found.`);
             }
