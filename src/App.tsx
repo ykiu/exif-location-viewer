@@ -110,7 +110,7 @@ const App = () => {
     <>
       {isOverlayVisible && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/75 text-white text-lg z-10 pointer-events-none">
-          Drag & drop geo-tagged images onto the map and view their locations.
+          Drag & drop geo-tagged images.
         </div>
       )}
       <div className="flex flex-row h-dvh">
