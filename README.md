@@ -1,3 +1,3 @@
 # EXIF Location Viewer
 
-Plot geo-tagged images on a map using their EXIF data.
+View geotagged photos on a map by dragging and dropping them into the browser.
