@@ -40,21 +40,6 @@ const consolidateMarkers = (
   return consolidated;
 };
 
-const loadFile = (file: File): Promise<ArrayBuffer> => {
-  const reader = new FileReader();
-  return new Promise((resolve, reject) => {
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        resolve(e.target.result as ArrayBuffer);
-      } else {
-        reject(new Error("Failed to read file"));
-      }
-    };
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsArrayBuffer(file);
-  });
-};
-
 const isNotNullish = <T,>(value: T | null | undefined): value is T => {
   return value != null;
 };
@@ -69,11 +54,19 @@ const App = () => {
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
+    console.time();
     const photos = await Promise.all(
       Array.from(files).map(async (file) => {
-        const { gps, Thumbnail } = ExifReader.load(await loadFile(file), {
-          expanded: true,
-        });
+        const { gps, Thumbnail } = await ExifReader.load(
+          new File(
+            // Limit to first 128KB to avoid loading large image data.
+            [file.slice(0, 128 * 1024)],
+            file.name,
+          {}),
+          {
+            expanded: true,
+          }
+        );
         const latitude = gps?.Latitude;
         const longitude = gps?.Longitude;
 
@@ -93,6 +86,8 @@ const App = () => {
         }
       })
     );
+    console.timeEnd();
+
     setPhotos(photos.filter(isNotNullish));
     setSelectedGroup(null);
     setIsOverlayVisible(false);
