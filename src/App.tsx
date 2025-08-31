@@ -3,7 +3,9 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import Map, { Marker } from "react-map-gl/maplibre";
 import ExifReader from "exifreader";
 import PhotoGroupPane from "./PhotoGroupPane";
-import type { Photo, PhotoGroup } from "./types";
+import LayerSwitcher from "./LayerSwitcher";
+import type { Photo, PhotoGroup, MapLayer } from "./types";
+import { mapLayers } from "./mapLayers";
 
 const consolidateMarkers = (
   photos: Photo[],
@@ -62,6 +64,7 @@ const App = () => {
   const [selectedGroup, setSelectedGroup] = useState<PhotoGroup | null>(null);
   const [zoom, setZoom] = useState(0);
   const [isOverlayVisible, setIsOverlayVisible] = useState(true);
+  const [selectedLayer, setSelectedLayer] = useState<MapLayer>(mapLayers[0]);
 
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -114,11 +117,11 @@ const App = () => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <Map
             style={{ width: "100%", height: "100%" }}
             onZoomEnd={(event) => setZoom(event.target.getZoom())}
-            mapStyle="https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json"
+            mapStyle={selectedLayer.style}
           >
             {photoGroups.map((group, index) => (
               <Marker
@@ -136,6 +139,10 @@ const App = () => {
               </Marker>
             ))}
           </Map>
+          <LayerSwitcher
+            selectedLayer={selectedLayer}
+            onLayerChange={setSelectedLayer}
+          />
         </div>
         {selectedGroup != null && (
           <PhotoGroupPane
